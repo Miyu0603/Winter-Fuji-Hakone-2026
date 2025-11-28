@@ -1,0 +1,156 @@
+
+
+
+
+import React, { useEffect, useState } from 'react';
+import { LocationDetail } from '../types';
+import { MapIcon, CarIcon, CopyIcon, CheckCircleIcon } from '../components/Icons';
+
+interface DetailViewProps {
+  location: LocationDetail;
+  onBack: () => void;
+}
+
+export const DetailView: React.FC<DetailViewProps> = ({ location, onBack }) => {
+  const [isCopied, setIsCopied] = useState(false);
+
+  // Prevent background scrolling when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
+  const handleCopy = () => {
+    if (location.carNaviPhone) {
+      navigator.clipboard.writeText(location.carNaviPhone);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
+      
+      {/* Backdrop (Click to close) */}
+      <div 
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity animate-in fade-in duration-300"
+        onClick={onBack}
+      ></div>
+
+      {/* Bottom Sheet Container */}
+      <div className="relative z-10 w-full max-w-lg bg-mag-paper rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col animate-in slide-in-from-bottom-full duration-300">
+        
+        {/* Sticky Header with Handle, Title & Close Button */}
+        <div className="sticky top-0 left-0 right-0 bg-mag-paper z-20 px-6 pt-12 pb-2 shrink-0">
+           {/* Visual Drag Handle (Centered) */}
+           <div className="absolute left-1/2 -translate-x-1/2 top-4 w-10 h-1 bg-gray-200 rounded-full"></div>
+           
+           <div className="flex justify-between items-start mt-2">
+             {/* Title */}
+             <h1 className="text-2xl font-serif font-bold text-mag-black leading-tight pr-4">
+               {location.title}
+             </h1>
+
+             {/* Close Button */}
+             <button 
+               onClick={onBack}
+               className="shrink-0 p-2 bg-gray-100/80 hover:bg-gray-200 text-mag-gray hover:text-mag-black rounded-full transition-colors active:scale-95"
+               aria-label="Close"
+             >
+               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+             </button>
+           </div>
+        </div>
+
+        {/* Scrollable Content */}
+        <div className="overflow-y-auto px-6 pb-8 pt-2">
+            
+            {/* Divider */}
+            <div className="w-10 h-0.5 bg-mag-gold mb-4"></div>
+
+            {/* Description */}
+            <div className="prose prose-sm prose-gray mb-4">
+               <p className="text-mag-black leading-relaxed text-base font-medium whitespace-pre-line">
+                 {location.description}
+               </p>
+            </div>
+
+            {/* Meta Data Grid */}
+            <div className="grid grid-cols-1 gap-3 mb-4 border-t border-gray-100 pt-4">
+               
+               {/* Car Navigation Phone */}
+               {location.carNaviPhone && (
+                 <div className="flex gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100 items-center justify-between">
+                    <div className="flex gap-3 items-center">
+                        <div className="w-8 h-8 rounded-full bg-mag-black text-white flex items-center justify-center shrink-0 border border-gray-100 shadow-sm">
+                           <CarIcon className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h3 className="text-[10px] font-bold text-mag-gray uppercase tracking-wider mb-0.5">自駕導航 (電話)</h3>
+                          <p className="text-base font-bold font-mono text-mag-black">{location.carNaviPhone}</p>
+                        </div>
+                    </div>
+                    <button 
+                        onClick={handleCopy}
+                        className="p-2 rounded-full hover:bg-gray-200 transition-colors"
+                        title="複製"
+                    >
+                        {isCopied ? <CheckCircleIcon className="w-5 h-5 text-green-600" /> : <CopyIcon className="w-5 h-5 text-gray-500" />}
+                    </button>
+                 </div>
+               )}
+
+               <div className="flex gap-3 items-start">
+                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0 text-mag-black border border-gray-100 shadow-sm mt-0.5">
+                     <MapIcon className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-[10px] font-bold text-mag-gray uppercase tracking-wider mb-0.5">地址</h3>
+                    <p className="text-sm font-medium text-mag-black leading-tight">{location.address || "暫無地址資訊"}</p>
+                  </div>
+               </div>
+               
+               {location.openingHours && (
+                 <div className="flex gap-3 items-start">
+                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0 text-mag-black border border-gray-100 shadow-sm mt-0.5">
+                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    </div>
+                    <div>
+                      <h3 className="text-[10px] font-bold text-mag-gray uppercase tracking-wider mb-0.5">營業時間</h3>
+                      <p className="text-sm font-medium text-mag-black leading-tight">{location.openingHours}</p>
+                    </div>
+                 </div>
+               )}
+            </div>
+
+            {/* Actions */}
+            <div className="space-y-2 pb-safe-bottom">
+              {location.mapUrl && (
+                <a 
+                  href={location.mapUrl}
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="block w-full py-3 bg-mag-black text-white text-center font-bold text-sm rounded-xl shadow-lg hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
+                >
+                  <MapIcon className="w-4 h-4" />
+                  開啟 Google Maps
+                </a>
+              )}
+              {location.websiteUrl && (
+                <a 
+                  href={location.websiteUrl}
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="block w-full py-3 bg-white text-mag-black border border-gray-200 text-center font-bold text-sm rounded-xl hover:bg-gray-50 transition-colors"
+                >
+                  訪問官方網站
+                </a>
+              )}
+            </div>
+        </div>
+      </div>
+    </div>
+  );
+};
