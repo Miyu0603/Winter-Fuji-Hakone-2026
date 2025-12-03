@@ -2,9 +2,17 @@
 
 
 
+
+
+
+
+
+
+
+
 import React, { useEffect, useState } from 'react';
 import { LocationDetail } from '../types';
-import { MapIcon, CarIcon, CopyIcon, CheckCircleIcon } from '../components/Icons';
+import { MapIcon, CarIcon, CopyIcon, CheckCircleIcon, BusIcon, WalkIcon } from '../components/Icons';
 
 interface DetailViewProps {
   location: LocationDetail;
@@ -70,60 +78,130 @@ export const DetailView: React.FC<DetailViewProps> = ({ location, onBack }) => {
             {/* Divider */}
             <div className="w-10 h-0.5 bg-mag-gold mb-4"></div>
 
+            {/* Image (Optional) */}
+            {location.imageUrl && (
+              <div className="mb-6 rounded-xl overflow-hidden shadow-md border border-gray-100">
+                <img 
+                  src={location.imageUrl} 
+                  alt={location.title}
+                  className="w-full h-auto object-cover block" 
+                />
+              </div>
+            )}
+
             {/* Description */}
-            <div className="prose prose-sm prose-gray mb-4">
+            <div className="prose prose-sm prose-gray mb-6">
                <p className="text-mag-black leading-relaxed text-base font-medium whitespace-pre-line">
                  {location.description}
                </p>
             </div>
 
-            {/* Meta Data Grid */}
-            <div className="grid grid-cols-1 gap-3 mb-4 border-t border-gray-100 pt-4">
-               
-               {/* Car Navigation Phone */}
-               {location.carNaviPhone && (
-                 <div className="flex gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100 items-center justify-between">
-                    <div className="flex gap-3 items-center">
-                        <div className="w-8 h-8 rounded-full bg-mag-black text-white flex items-center justify-center shrink-0 border border-gray-100 shadow-sm">
-                           <CarIcon className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <h3 className="text-[10px] font-bold text-mag-gray uppercase tracking-wider mb-0.5">自駕導航 (電話)</h3>
-                          <p className="text-base font-bold font-mono text-mag-black">{location.carNaviPhone}</p>
-                        </div>
-                    </div>
-                    <button 
-                        onClick={handleCopy}
-                        className="p-2 rounded-full hover:bg-gray-200 transition-colors"
-                        title="複製"
-                    >
-                        {isCopied ? <CheckCircleIcon className="w-5 h-5 text-green-600" /> : <CopyIcon className="w-5 h-5 text-gray-500" />}
-                    </button>
-                 </div>
-               )}
+            {/* Structured Transit Info - Simplified View */}
+            {location.transitLegs && location.transitLegs.length > 0 && (
+              <div className="mb-6 relative">
+                 {/* Continuous Line (Background) */}
+                 <div className="absolute left-[11px] top-3 bottom-8 w-0.5 bg-gray-200"></div>
 
-               <div className="flex gap-3 items-start">
-                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0 text-mag-black border border-gray-100 shadow-sm mt-0.5">
-                     <MapIcon className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-[10px] font-bold text-mag-gray uppercase tracking-wider mb-0.5">地址</h3>
-                    <p className="text-sm font-medium text-mag-black leading-tight">{location.address || "暫無地址資訊"}</p>
-                  </div>
-               </div>
-               
-               {location.openingHours && (
-                 <div className="flex gap-3 items-start">
-                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0 text-mag-black border border-gray-100 shadow-sm mt-0.5">
-                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                    </div>
+                 {/* 1. Start Node */}
+                 <div className="flex items-center gap-4 mb-6 relative z-10">
+                    <div className="w-6 h-6 rounded-full bg-mag-black border-2 border-white shadow-sm shrink-0"></div>
                     <div>
-                      <h3 className="text-[10px] font-bold text-mag-gray uppercase tracking-wider mb-0.5">營業時間</h3>
-                      <p className="text-sm font-medium text-mag-black leading-tight">{location.openingHours}</p>
+                       <span className="text-xl font-mono font-bold text-mag-black mr-3">{location.transitLegs[0].depTime}</span>
+                       <span className="text-base font-bold text-mag-black">{location.transitLegs[0].depStop}</span>
                     </div>
                  </div>
-               )}
-            </div>
+
+                 {/* 2. Legs Cards (Without intermediate nodes) */}
+                 {location.transitLegs.map((leg, i) => (
+                    <div key={i} className="relative z-10 mb-6">
+                        
+                        {/* Dot for Walk Leg */}
+                        {leg.type === 'walk' && (
+                           <div className="absolute left-[8px] top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-gray-400 ring-4 ring-mag-paper"></div>
+                        )}
+
+                        <div className="pl-10 pr-2">
+                            <div className={`p-3 rounded-xl border flex flex-col gap-1 shadow-sm ${leg.type === 'walk' ? 'bg-white border-dashed border-gray-300' : 'bg-gray-50 border-gray-100'}`}>
+                                <div className="flex items-center gap-2 font-bold text-mag-black">
+                                    {leg.type === 'walk' ? <WalkIcon className="w-5 h-5 text-gray-500"/> : <BusIcon className="w-5 h-5 text-mag-gold"/>}
+                                    <span>{leg.transport}</span>
+                                </div>
+                                <div className="flex flex-wrap gap-2 mt-1">
+                                {leg.details?.map((d, idx) => (
+                                    <span key={idx} className="text-xs font-bold text-gray-500 bg-black/5 px-2 py-0.5 rounded">{d}</span>
+                                ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                 ))}
+
+                 {/* 3. End Node */}
+                 <div className="flex items-center gap-4 relative z-10">
+                    <div className="w-6 h-6 rounded-full bg-mag-red border-2 border-white shadow-sm shrink-0"></div>
+                    <div>
+                       <span className="text-xl font-mono font-bold text-mag-black mr-3">
+                         {location.transitLegs[location.transitLegs.length - 1].arrTime}
+                       </span>
+                       <span className="text-base font-bold text-mag-black">
+                         {location.transitLegs[location.transitLegs.length - 1].arrStop}
+                       </span>
+                    </div>
+                 </div>
+              </div>
+            )}
+
+            {/* Meta Data Grid */}
+            {(location.address || location.openingHours || location.carNaviPhone) && (
+              <div className="grid grid-cols-1 gap-3 mb-4 border-t border-gray-100 pt-6">
+                 
+                 {/* Car Navigation Phone */}
+                 {location.carNaviPhone && (
+                   <div className="flex gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100 items-center justify-between">
+                      <div className="flex gap-3 items-center">
+                          <div className="w-8 h-8 rounded-full bg-mag-black text-white flex items-center justify-center shrink-0 border border-gray-100 shadow-sm">
+                             <CarIcon className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <h3 className="text-[10px] font-bold text-mag-gray uppercase tracking-wider mb-0.5">自駕導航 (電話)</h3>
+                            <p className="text-base font-bold font-mono text-mag-black">{location.carNaviPhone}</p>
+                          </div>
+                      </div>
+                      <button 
+                          onClick={handleCopy}
+                          className="p-2 rounded-full hover:bg-gray-200 transition-colors"
+                          title="複製"
+                      >
+                          {isCopied ? <CheckCircleIcon className="w-5 h-5 text-green-600" /> : <CopyIcon className="w-5 h-5 text-gray-500" />}
+                      </button>
+                   </div>
+                 )}
+
+                 {location.address && (
+                   <div className="flex gap-3 items-start">
+                      <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0 text-mag-black border border-gray-100 shadow-sm mt-0.5">
+                         <MapIcon className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h3 className="text-[10px] font-bold text-mag-gray uppercase tracking-wider mb-0.5">地址</h3>
+                        <p className="text-sm font-medium text-mag-black leading-tight">{location.address}</p>
+                      </div>
+                   </div>
+                 )}
+                 
+                 {location.openingHours && (
+                   <div className="flex gap-3 items-start">
+                      <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0 text-mag-black border border-gray-100 shadow-sm mt-0.5">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                      </div>
+                      <div>
+                        <h3 className="text-[10px] font-bold text-mag-gray uppercase tracking-wider mb-0.5">營業時間</h3>
+                        <p className="text-sm font-medium text-mag-black leading-tight">{location.openingHours}</p>
+                      </div>
+                   </div>
+                 )}
+              </div>
+            )}
 
             {/* Actions */}
             <div className="space-y-2 pb-safe-bottom">

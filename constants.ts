@@ -1,5 +1,7 @@
 
 
+
+
 import { DaySchedule, ChecklistItem, LocationDetail, UsefulLink, EmergencyContact } from './types';
 
 // Google Apps Script URL for Expenses
@@ -236,6 +238,36 @@ export const LOCATION_DETAILS: Record<string, LocationDetail> = {
     address: '東京都台東区浅草',
     mapUrl: 'https://www.google.com/maps/search/?api=1&query=Nakamise-dori+Street',
     websiteUrl: 'https://www.facebook.com/AsakusaNakamise/?ref=embed_page#'
+  },
+  'bus_to_museum': {
+    id: 'bus_to_museum',
+    title: '巴士轉乘資訊 (御殿場 → 彫刻の森)',
+    description: `10:50 → 11:36 (46分)
+總車資：1300円
+轉乘：1回`,
+    transitLegs: [
+      {
+        type: 'bus',
+        transport: '小田急箱根高速巴士 [W線]',
+        depTime: '10:50', depStop: '御殿場駅',
+        arrTime: '11:11', arrStop: '箱根仙石',
+        details: ['往箱根桃源台', '💰 730円', '下車：箱根仙石']
+      },
+      {
+        type: 'walk',
+        transport: '步行轉乘',
+        depTime: '11:11', depStop: '箱根仙石',
+        arrTime: '11:22', arrStop: '仙石',
+        details: ['同站或對面', '⏱️ 11 分鐘', '前往：仙石']
+      },
+      {
+        type: 'bus',
+        transport: '箱根登山巴士 [M線]',
+        depTime: '11:22', depStop: '仙石',
+        arrTime: '11:36', arrStop: '彫刻の森美術館',
+        details: ['往天悠', '💰 570円']
+      }
+    ]
   }
 };
 
@@ -291,7 +323,7 @@ export const ITINERARY: DaySchedule[] = [
       { time: '08:00', description: '早餐並退房，前往河口湖站' },
       { time: '09:00', description: '搭乘富士急巴士前往御殿場站', isHighlight: true },
       { time: '10:30', description: '抵達御殿場站，寄放行李' },
-      { time: '10:50', description: '搭巴士至箱根雕刻森林美術館' },
+      { time: '10:50', description: '搭巴士至箱根雕刻森林美術館', locationId: 'bus_to_museum' },
       { time: '11:36', description: '參觀箱根雕刻森林美術館', note: '1.5 - 2 小時', locationId: 'hakone_museum' },
       { time: '13:30', description: '前往強羅站' },
       { time: '13:45', description: '搭乘登山纜車至早雲山，換空中纜車' },

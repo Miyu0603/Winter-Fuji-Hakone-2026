@@ -8,6 +8,18 @@ export interface LocationDetail {
   mapUrl?: string;
   websiteUrl?: string;
   carNaviPhone?: string; // For Japanese Car GPS
+  imageUrl?: string; // New: Image to display in detail view
+  transitLegs?: TransitLeg[]; // New: Structured transit info
+}
+
+export interface TransitLeg {
+  type: 'bus' | 'walk' | 'train' | 'wait';
+  transport: string;
+  depTime: string;
+  depStop: string;
+  arrTime: string;
+  arrStop: string;
+  details: string[];
 }
 
 export interface ItineraryEvent {

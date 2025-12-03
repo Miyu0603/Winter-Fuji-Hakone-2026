@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 
 export const CheckIcon = ({ className }: { className?: string }) => (
@@ -72,6 +73,26 @@ export const CarIcon = ({ className }: { className?: string }) => (
     <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
     <circle cx="5.5" cy="18.5" r="2.5"></circle>
     <circle cx="18.5" cy="18.5" r="2.5"></circle>
+  </svg>
+);
+
+export const BusIcon = ({ className }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M19 17h2l.64-2.54c.24-.959.24-1.962 0-2.92l-1.07-4.27A3 3 0 0 0 17.66 5H4.34a3 3 0 0 0-2.91 2.27l-1.07 4.27c-.24.959-.24 1.962 0 2.92L1 17h2"></path>
+    <path d="M14 17H8"></path>
+    <circle cx="5.5" cy="17.5" r="2.5"></circle>
+    <circle cx="16.5" cy="17.5" r="2.5"></circle>
+    <path d="M16 5l-1-2H7L6 5"></path>
+  </svg>
+);
+
+export const WalkIcon = ({ className }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M13 4v6l4.24-2.12"></path>
+    <path d="M5.46 16l3.1-3.6"></path>
+    <path d="M14 10l-1.6 4.9L16 19"></path>
+    <path d="M8.56 12.4L7 17l4 2"></path>
+    <circle cx="13" cy="3" r="1.5"></circle>
   </svg>
 );
 

@@ -196,7 +196,7 @@ const App: React.FC = () => {
       )}
 
       <header className="fixed top-0 left-0 right-0 z-30 bg-mag-paper border-b border-gray-200 pt-safe-top">
-        <div className="max-w-lg mx-auto px-5 pt-6 pb-2">
+        <div className="max-w-lg mx-auto px-5 pt-6 pb-0">
           <div className="flex justify-between items-center mb-4">
              {/* LEFT: Title */}
              <div className="text-left">
@@ -229,12 +229,12 @@ const App: React.FC = () => {
              </a>
           </div>
 
-          <div className="flex gap-6 border-b border-transparent overflow-x-auto no-scrollbar">
+          <div className="flex w-full justify-between items-end">
             {[Tab.ITINERARY, Tab.PREP, Tab.PACKING, Tab.INFO, Tab.COST, Tab.SHOPPING].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`pb-2 text-sm font-bold tracking-wide transition-all relative whitespace-nowrap ${
+                className={`flex-1 pb-3 text-sm font-bold tracking-wide transition-all relative whitespace-nowrap text-center ${
                   activeTab === tab ? 'text-mag-black' : 'text-gray-400 hover:text-gray-600'
                 }`}
               >
@@ -245,7 +245,7 @@ const App: React.FC = () => {
                 {tab === Tab.COST && '記帳'}
                 {tab === Tab.SHOPPING && '購物'}
                 {activeTab === tab && (
-                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-mag-gold rounded-full"></span>
+                  <span className="absolute bottom-0 left-0 right-0 h-[3px] bg-mag-gold rounded-t-sm"></span>
                 )}
               </button>
             ))}

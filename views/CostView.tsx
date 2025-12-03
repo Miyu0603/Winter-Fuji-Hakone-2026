@@ -46,10 +46,12 @@ export const CostView: React.FC<CostViewProps> = ({
 
   // --- FORMATTERS ---
   const formatMoney = (val: number, curr: 'JPY' | 'TWD') => {
-    return curr === 'JPY' ? `¥${Math.round(val).toLocaleString()}` : `$${Math.round(val).toLocaleString()}`;
+    // Remove NT/¥ prefix as requested, just use $
+    return `$${Math.round(val).toLocaleString()}`;
   };
 
   const formatDate = (dateStr: string) => {
+    // Force YYYY/MM/DD
     const date = new Date(dateStr);
     if (!isNaN(date.getTime())) {
       const y = date.getFullYear();
@@ -57,8 +59,8 @@ export const CostView: React.FC<CostViewProps> = ({
       const d = String(date.getDate()).padStart(2, '0');
       return `${y}/${m}/${d}`;
     }
-    const match = dateStr.match(/(\d{4}\/\d{1,2}\/\d{1,2})|(\d{1,2}\/\d{1,2})/);
-    return match ? match[0] : dateStr;
+    // Fallback if parsing fails but try to match pattern
+    return dateStr;
   };
 
   // --- HANDLERS ---
@@ -239,25 +241,22 @@ export const CostView: React.FC<CostViewProps> = ({
             return (
               <div key={record.rowIndex || Math.random()} className={`bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all ${isDeleting && deleteConfirmId === record.rowIndex ? 'opacity-50' : ''}`}>
                 
-                {/* TOP ROW: Metadata & Actions */}
-                <div className="flex justify-between items-start gap-2 mb-2">
+                {/* TOP ROW: Metadata (Date, Payer, Note) & Actions */}
+                <div className="flex justify-between items-start gap-2 mb-3 pb-3 border-b border-gray-50">
                    {/* Info Tags */}
-                   <div className="flex flex-col gap-1 min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                         <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">
-                           {formatDate(record.date)}
-                         </span>
-                         <span className={`text-[10px] font-bold border px-1.5 py-0.5 rounded ${
-                           record.payer === '想想' ? 'border-pink-200 text-pink-500 bg-pink-50' : 'border-blue-200 text-blue-600 bg-blue-50'
-                         }`}>
-                           {record.payer}
-                         </span>
-                      </div>
-                      
+                   <div className="flex flex-wrap items-center gap-2 flex-1">
+                      <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">
+                        {formatDate(record.date)}
+                      </span>
+                      <span className={`text-[10px] font-bold border px-1.5 py-0.5 rounded ${
+                        record.payer === '想想' ? 'border-pink-200 text-pink-500 bg-pink-50' : 'border-blue-200 text-blue-600 bg-blue-50'
+                      }`}>
+                        {record.payer}
+                      </span>
                       {record.note && (
-                         <p className="text-xs text-gray-400 bg-gray-50 px-2 py-0.5 rounded inline-block truncate max-w-full w-fit">
+                         <span className="text-xs text-gray-400 bg-gray-50 px-2 py-0.5 rounded inline-block truncate max-w-[120px]">
                            {record.note}
-                         </p>
+                         </span>
                       )}
                    </div>
 
