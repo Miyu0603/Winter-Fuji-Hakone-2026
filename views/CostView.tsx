@@ -1,7 +1,8 @@
 
+
 import React, { useState } from 'react';
-import { GOOGLE_SHEET_URL, GOOGLE_SCRIPT_URL } from '../constants';
-import { SheetIcon, SpinnerIcon, PlusIcon, RefreshIcon } from '../components/Icons';
+import { GOOGLE_SCRIPT_URL, GOOGLE_SHEET_URL } from '../constants';
+import { SheetIcon, PlusIcon, RefreshIcon, EditIcon, TrashIcon } from '../components/Icons';
 import { ExpenseRecord } from '../types';
 
 interface CostViewProps {
@@ -9,7 +10,7 @@ interface CostViewProps {
   isLoading: boolean;
   fetchError: string | null;
   onRefresh: () => void;
-  onAddSuccess: () => void; // Trigger parent refresh
+  onAddSuccess: () => void;
 }
 
 export const CostView: React.FC<CostViewProps> = ({ 
@@ -19,111 +20,217 @@ export const CostView: React.FC<CostViewProps> = ({
   onRefresh,
   onAddSuccess
 }) => {
-  // Form State (Local UI state is fine here)
-  const [showAddModal, setShowAddModal] = useState(false);
+  // --- STATE ---
+  const [showModal, setShowModal] = useState(false);
+  const [mode, setMode] = useState<'add' | 'edit'>('add');
+  
+  // Custom Confirmation Modal State (Replaces window.confirm)
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  
+  // Error Message State (Replaces alert)
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  // Form Data
+  const [editingRowIndex, setEditingRowIndex] = useState<number | null>(null);
+  const [date, setDate] = useState(''); // New State for Date
   const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState<'JPY' | 'TWD'>('JPY');
   const [item, setItem] = useState('');
   const [payer, setPayer] = useState<'想想' | '錢錢'>('想想');
   const [note, setNote] = useState('');
+
+  // Processing States
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [isDeleting, setIsDeleting] = useState(false); // Global deleting state
 
-  // Calculate Totals
-  const totalTWD = expenses.reduce((sum, rec) => sum + (Number(rec.twd) || 0), 0);
-  const totalJPY = expenses.reduce((sum, rec) => sum + (Number(rec.jpy) || 0), 0);
+  // --- CALCULATIONS ---
+  const totalTWD = expenses.reduce((sum, r) => sum + r.amountTwd, 0);
+  const totalJPY = expenses.reduce((sum, r) => sum + r.amountJpy, 0);
 
-  // Handle Submit
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!amount || !item) return;
+  // --- FORMATTERS ---
+  const formatMoney = (val: number, curr: 'JPY' | 'TWD') => {
+    // Only show $ symbol, remove NT and Yen symbols for cleaner look per request
+    return curr === 'JPY' ? `¥${Math.round(val).toLocaleString()}` : `$${Math.round(val).toLocaleString()}`;
+  };
 
-    if (!GOOGLE_SCRIPT_URL) {
-      alert("請先設定 GOOGLE_SCRIPT_URL (constants.ts)");
-      return;
+  const formatDate = (dateStr: string) => {
+    // Attempt to parse standard date strings
+    const date = new Date(dateStr);
+    if (!isNaN(date.getTime())) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}/${m}/${d}`;
+    }
+    // Fallback regex match if string format is weird
+    const match = dateStr.match(/(\d{4}\/\d{1,2}\/\d{1,2})|(\d{1,2}\/\d{1,2})/);
+    return match ? match[0] : dateStr;
+  };
+
+  // --- HANDLERS ---
+
+  const handleOpenAdd = () => {
+    setActionError(null);
+    setMode('add');
+    setEditingRowIndex(null);
+    // Default date to today
+    const today = new Date();
+    const y = today.getFullYear();
+    const m = String(today.getMonth() + 1).padStart(2, '0');
+    const d = String(today.getDate()).padStart(2, '0');
+    setDate(`${y}-${m}-${d}`);
+    
+    setAmount(''); setItem(''); setPayer('想想'); setNote(''); setCurrency('JPY');
+    setShowModal(true);
+  };
+
+  const handleOpenEdit = (e: React.MouseEvent, record: ExpenseRecord) => {
+    e.stopPropagation();
+    setActionError(null);
+    setMode('edit');
+    setEditingRowIndex(record.rowIndex);
+    
+    // Parse record date for input (YYYY-MM-DD)
+    const dateObj = new Date(record.date);
+    if (!isNaN(dateObj.getTime())) {
+       const y = dateObj.getFullYear();
+       const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+       const d = String(dateObj.getDate()).padStart(2, '0');
+       setDate(`${y}-${m}-${d}`);
+    } else {
+       // Fallback: try to guess or just set today
+       setDate(''); 
     }
 
-    setIsSubmitting(true);
-    setSubmitStatus('idle');
+    setItem(record.item);
+    setPayer(record.payer as any);
+    setNote(record.note);
+    
+    if (record.amountTwd > 0) {
+      setCurrency('TWD');
+      setAmount(String(record.amountTwd));
+    } else {
+      setCurrency('JPY');
+      setAmount(String(record.amountJpy));
+    }
+    
+    setShowModal(true);
+  };
+
+  // Step 1: Request Delete (Opens Custom Modal)
+  const handleRequestDelete = (e: React.MouseEvent, rowIndex: number) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setActionError(null);
+
+    const numericRowIndex = Number(rowIndex);
+    if (!numericRowIndex || numericRowIndex <= 0 || isNaN(numericRowIndex)) {
+      setActionError(`無法刪除：資料缺少行號 (rowIndex: ${rowIndex})。請更新 GAS。`);
+      return;
+    }
+    
+    setDeleteConfirmId(numericRowIndex);
+  };
+
+  // Step 2: Confirm Delete (Executes API)
+  const handleConfirmDelete = async () => {
+    if (deleteConfirmId === null) return;
+    
+    setIsDeleting(true);
+    setActionError(null);
 
     try {
-      const amountNum = Number(amount);
-      const data = {
-        item,
-        payer,
-        amountTwd: currency === 'TWD' ? amountNum : 0,
-        amountJpy: currency === 'JPY' ? amountNum : 0,
-        note
+      const payload = { 
+        action: 'delete', 
+        rowIndex: deleteConfirmId 
       };
+      
+      const response = await fetch(GOOGLE_SCRIPT_URL, {
+        method: 'POST',
+        headers: { "Content-Type": "text/plain;charset=utf-8" }, 
+        body: JSON.stringify(payload),
+      });
+      
+      const result = await response.json();
+      
+      if (result.result === "success") {
+        setDeleteConfirmId(null); // Close modal
+        onAddSuccess(); 
+      } else {
+        setActionError("刪除失敗：" + (result.error || "未知錯誤"));
+      }
+    } catch (error) {
+      console.error("Delete error:", error);
+      setActionError("刪除失敗，請檢查網路連線");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setActionError(null);
+    if (!amount || !item) return;
+
+    setIsSubmitting(true);
+
+    try {
+      // Format date for display/storage (YYYY/MM/DD)
+      const dateObj = new Date(date);
+      const formattedDate = !isNaN(dateObj.getTime()) 
+          ? `${dateObj.getFullYear()}/${String(dateObj.getMonth() + 1).padStart(2, '0')}/${String(dateObj.getDate()).padStart(2, '0')}`
+          : date;
+
+      const payload = {
+        action: mode,
+        rowIndex: editingRowIndex,
+        date: formattedDate, // Add Date to payload
+        item: item.trim(),
+        payer: payer,
+        amountTwd: currency === 'TWD' ? Number(amount) : 0,
+        amountJpy: currency === 'JPY' ? Number(amount) : 0,
+        note: note.trim()
+      };
+      
       await fetch(GOOGLE_SCRIPT_URL, {
         method: 'POST',
-        body: JSON.stringify(data),
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload),
       });
 
-      // Reset Form
-      setAmount('');
-      setItem('');
-      setNote('');
-      setSubmitStatus('success');
-      
-      // Trigger refresh in parent
+      setShowModal(false);
       onAddSuccess();
-      
-      setTimeout(() => {
-        setSubmitStatus('idle');
-        setShowAddModal(false);
-      }, 1000);
 
     } catch (error) {
       console.error(error);
-      setSubmitStatus('error');
+      setActionError("提交失敗，請檢查網路");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Format Date Helper
-  const formatDate = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-    } catch (e) {
-      return dateString; // Fallback to original string if parse fails
-    }
-  };
+  // --- RENDER ---
 
   return (
-    <div className="pb-32 pt-6 px-5 max-w-lg mx-auto animate-in fade-in slide-in-from-bottom-2 duration-500 relative">
+    <div className="pb-32 pt-6 px-5 max-w-lg mx-auto animate-in fade-in slide-in-from-bottom-2 duration-500">
       
-      {/* Header Section */}
+      {/* HEADER */}
       <div className="flex justify-between items-end mb-6">
         <div>
           <h2 className="text-xs font-bold tracking-[0.2em] text-mag-gray uppercase mb-1 pl-1">EXPENSES</h2>
           <h3 className="text-2xl font-serif font-bold text-mag-black">消費紀錄</h3>
         </div>
-        
         <div className="flex gap-2">
-            {/* Refresh Button */}
-            <button 
-                onClick={onRefresh}
-                className="bg-white text-mag-gray border border-gray-200 p-3 rounded-full shadow-sm hover:text-mag-black hover:border-gray-300 active:scale-95 transition-all"
-                title="重新整理"
-            >
+            <button onClick={() => { setActionError(null); onRefresh(); }} className="bg-white text-mag-gray border border-gray-200 p-3 rounded-full shadow-sm hover:text-mag-black active:scale-95 transition-all">
                 <RefreshIcon className={`w-6 h-6 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
-            
-            {/* Add Button */}
-            <button 
-            onClick={() => setShowAddModal(true)}
-            className="bg-mag-gold text-white p-3 rounded-full shadow-lg hover:bg-[#b08d48] active:scale-95 transition-transform"
-            >
-            <PlusIcon className="w-6 h-6" />
+            <button onClick={handleOpenAdd} className="bg-mag-gold text-white p-3 rounded-full shadow-lg hover:bg-[#b08d48] active:scale-95 transition-transform">
+                <PlusIcon className="w-6 h-6" />
             </button>
         </div>
       </div>
 
-      {/* Summary Cards */}
+      {/* SUMMARY */}
       <div className="grid grid-cols-2 gap-4 mb-8">
         <div className="bg-mag-black text-white p-5 rounded-xl shadow-float">
            <div className="text-[10px] font-bold uppercase tracking-wider opacity-60 mb-2">Total JPY</div>
@@ -131,205 +238,210 @@ export const CostView: React.FC<CostViewProps> = ({
         </div>
         <div className="bg-white text-mag-black border border-gray-100 p-5 rounded-xl shadow-sm">
            <div className="text-[10px] font-bold uppercase tracking-wider text-mag-gray mb-2">Total TWD</div>
-           <div className="text-2xl font-mono font-bold text-mag-black">NT${totalTWD.toLocaleString()}</div>
+           <div className="text-2xl font-mono font-bold text-mag-black">${totalTWD.toLocaleString()}</div>
         </div>
       </div>
 
-      {/* Expense List */}
+      {/* ERROR MESSAGE (Replaces Alert) */}
+      {(fetchError || actionError) && (
+        <div className="bg-red-50 border border-red-100 text-red-600 p-4 rounded-xl text-center text-sm font-bold mb-6 whitespace-pre-line leading-relaxed shadow-sm animate-in fade-in slide-in-from-top-2">
+          {fetchError || actionError}
+        </div>
+      )}
+
+      {/* LIST */}
       <div className="space-y-4">
-        {isLoading && expenses.length === 0 ? (
-          <div className="flex justify-center py-10 text-mag-gray">
-            <SpinnerIcon className="w-6 h-6 mr-2" /> 讀取中...
-          </div>
-        ) : fetchError ? (
-          <div className="text-center py-6 px-4 bg-red-50 text-red-600 rounded-xl border border-red-100 text-sm">
-             <p className="font-bold mb-2">無法載入資料</p>
-             <p className="text-xs opacity-80 mb-4">{fetchError}</p>
-             <button onClick={onRefresh} className="text-xs bg-white border border-red-200 px-4 py-2 rounded-full hover:bg-red-50 font-bold">
-               重試
-             </button>
-          </div>
-        ) : expenses.length === 0 ? (
-          <div className="text-center py-10 text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-            尚無紀錄
-          </div>
+        {expenses.length === 0 && !isLoading ? (
+          <div className="text-center py-10 text-gray-400 border border-dashed rounded-xl">尚無紀錄</div>
         ) : (
-          expenses.map((record, idx) => (
-            <div key={idx} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col gap-2">
-              {/* Top Row: Date | Payer | Amount */}
-              <div className="flex justify-between items-start">
-                 <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">
-                      {formatDate(record.date)}
-                    </span>
-                    <span className={`text-[10px] font-bold border px-1.5 py-0.5 rounded ${record.payer === '想想' ? 'border-pink-200 text-pink-500 bg-pink-50' : 'border-blue-200 text-blue-50'}`}>
-                      {record.payer}
-                    </span>
-                 </div>
-                 
-                 <div className="text-right">
-                    {Number(record.jpy) > 0 && (
-                      <span className="text-base font-bold font-mono block">¥{Number(record.jpy).toLocaleString()}</span>
-                    )}
-                    {Number(record.twd) > 0 && (
-                      <span className="text-base font-bold font-mono text-mag-gray block">NT${Number(record.twd).toLocaleString()}</span>
-                    )}
-                 </div>
-              </div>
+          expenses.map((record) => {
+            const isValidRow = record.rowIndex && record.rowIndex > 0;
+            const isTargetDeleting = deleteConfirmId === record.rowIndex;
 
-              {/* Middle Row: Item */}
-              <div className="text-base font-bold text-mag-black leading-tight">
-                {record.item}
-              </div>
+            return (
+              <div key={record.rowIndex || Math.random()} className={`relative group bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all ${isDeleting ? 'opacity-50 pointer-events-none' : ''}`}>
+                
+                {/* BUTTONS: Outer Layer (Edit & Delete) */}
+                <div className="absolute top-3 right-3 z-50 flex gap-1">
+                   {/* Edit Button */}
+                   <button 
+                     type="button"
+                     onClick={(e) => handleOpenEdit(e, record)}
+                     className="p-2 bg-gray-50 text-gray-400 hover:text-mag-gold hover:bg-mag-gold/10 rounded-lg transition-colors cursor-pointer active:scale-95"
+                     title="編輯"
+                   >
+                     <EditIcon className="w-4 h-4" />
+                   </button>
 
-              {/* Bottom Row: Note */}
-              {record.note && (
-                <div className="bg-gray-50 text-xs text-gray-500 px-2 py-1.5 rounded w-full">
-                  備註：{record.note}
+                   {/* Delete Button */}
+                   <button 
+                     type="button"
+                     onClick={(e) => handleRequestDelete(e, record.rowIndex)}
+                     className={`p-2 rounded-lg transition-colors cursor-pointer active:scale-95 ${isValidRow ? 'bg-gray-50 text-gray-400 hover:text-red-500 hover:bg-red-50' : 'bg-red-50 text-red-500'}`}
+                     title={isValidRow ? "刪除" : "資料異常 (無法刪除)"}
+                   >
+                     {!isValidRow ? (
+                       <span className="text-xs font-bold">⚠️</span> 
+                     ) : (
+                       <TrashIcon className="w-4 h-4" />
+                     )}
+                   </button>
                 </div>
-              )}
-            </div>
-          ))
+
+                {/* CONTENT */}
+                <div className="pr-20"> 
+                   <div className="flex items-center gap-2 mb-2">
+                      <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">
+                        {formatDate(record.date)}
+                      </span>
+                      <span className={`text-[10px] font-bold border px-1.5 py-0.5 rounded ${
+                        record.payer === '想想' ? 'border-pink-200 text-pink-500 bg-pink-50' : 'border-blue-200 text-blue-600 bg-blue-50'
+                      }`}>
+                        {record.payer}
+                      </span>
+                   </div>
+                   
+                   <h4 className="text-base font-bold text-mag-black mb-1">{record.item}</h4>
+                   
+                   <div className="font-mono font-light text-lg text-mag-black">
+                     {record.amountJpy > 0 && formatMoney(record.amountJpy, 'JPY')}
+                     {record.amountTwd > 0 && formatMoney(record.amountTwd, 'TWD')}
+                   </div>
+
+                   {record.note && (
+                      <p className="mt-2 text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded inline-block">
+                        {record.note}
+                      </p>
+                   )}
+                </div>
+
+              </div>
+            );
+          })
         )}
       </div>
-      
-      {/* Footer Link */}
+
       <div className="text-center mt-8">
-         <a 
-           href={GOOGLE_SHEET_URL}
-           target="_blank"
-           rel="noopener noreferrer"
-           className="inline-flex items-center gap-2 text-mag-gray hover:text-mag-gold transition-colors text-xs font-bold uppercase tracking-wider"
-         >
-           <SheetIcon className="w-4 h-4" />
-           Open Google Sheets
+         <a href={GOOGLE_SHEET_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-mag-gray hover:text-mag-gold text-xs font-bold uppercase">
+           <SheetIcon className="w-4 h-4" /> Open Google Sheets
          </a>
       </div>
 
-      {/* Add Expense Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-          <div 
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
-            onClick={() => setShowAddModal(false)}
-          ></div>
-          
-          <div className="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl shadow-2xl z-10 p-6 animate-in slide-in-from-bottom-10 duration-300">
-            <div className="flex justify-between items-center mb-6">
-               <h3 className="text-xl font-serif font-bold text-mag-black">新增支出</h3>
-               <button 
-                 onClick={() => setShowAddModal(false)}
-                 className="text-gray-400 hover:text-mag-black p-2"
-               >
-                 ✕
-               </button>
-            </div>
+      {/* EDIT / ADD MODAL */}
+      {showModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowModal(false)} />
+          <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl z-10 p-6 animate-in zoom-in-95 duration-200">
+             <div className="flex justify-between mb-6">
+                <h3 className="text-xl font-serif font-bold">{mode === 'edit' ? '編輯項目' : '新增項目'}</h3>
+                <button type="button" onClick={() => setShowModal(false)}><span className="text-2xl text-gray-400">×</span></button>
+             </div>
+             
+             <form onSubmit={handleSubmit} className="space-y-3">
+                {/* Date Input */}
+                <div>
+                   <label className="block text-sm font-bold text-gray-400 mb-1">日期</label>
+                   <input 
+                      type="date" required
+                      value={date} onChange={e => setDate(e.target.value)}
+                      className="w-full bg-gray-50 p-3 rounded-lg font-bold text-base outline-none focus:ring-2 ring-mag-gold/20 text-mag-black"
+                   />
+                </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
-              {/* Amount & Currency */}
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                    <label className="text-xs font-bold text-mag-gray uppercase tracking-wider">金額</label>
-                    <div className="flex bg-gray-100 rounded p-0.5">
-                      {(['JPY', 'TWD'] as const).map((c) => (
-                        <button
-                          key={c}
-                          type="button"
-                          onClick={() => setCurrency(c)}
-                          className={`px-3 py-1 text-xs font-bold rounded transition-all ${
-                            currency === c 
-                              ? 'bg-mag-black text-white shadow-md' 
-                              : 'text-gray-400 hover:text-gray-600'
-                          }`}
-                        >
-                          {c}
-                        </button>
+                {/* Amount */}
+                <div>
+                   <label className="block text-sm font-bold text-gray-400 mb-1">金額</label>
+                   <div className="relative">
+                      <input 
+                         type="number" inputMode="decimal" placeholder="0" required 
+                         value={amount} onChange={e => setAmount(e.target.value)}
+                         className="w-full bg-gray-50 text-2xl font-serif font-bold p-3 pr-32 rounded-lg outline-none focus:ring-2 ring-mag-gold/20"
+                      />
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2 bg-gray-200 p-1 rounded-lg grid grid-cols-2 gap-0.5 w-[100px]">
+                         {(['JPY', 'TWD'] as const).map(c => (
+                            <button type="button" key={c} onClick={() => setCurrency(c)}
+                               className={`py-1 text-[10px] font-bold rounded-md transition-all text-center ${currency === c ? 'bg-mag-black text-white shadow' : 'text-gray-500 hover:text-gray-700'}`}>
+                               {c}
+                            </button>
+                         ))}
+                      </div>
+                   </div>
+                </div>
+
+                {/* Item */}
+                <div>
+                   <label className="block text-sm font-bold text-gray-400 mb-1">項目名稱</label>
+                   <input 
+                      type="text" placeholder="例如：晚餐" required
+                      value={item} onChange={e => setItem(e.target.value)}
+                      className="w-full bg-gray-50 p-3 rounded-lg font-bold text-lg outline-none focus:ring-2 ring-mag-gold/20"
+                   />
+                </div>
+
+                {/* Payer */}
+                <div>
+                   <label className="block text-sm font-bold text-gray-400 mb-1">付款者</label>
+                   <div className="flex gap-2">
+                      {(['想想', '錢錢'] as const).map(p => (
+                         <button type="button" key={p} onClick={() => setPayer(p)}
+                            className={`flex-1 py-3 text-sm font-bold rounded-lg border transition-all ${payer === p ? 'border-mag-gold bg-mag-gold/10 text-mag-gold' : 'border-gray-200 text-gray-400 hover:bg-gray-50'}`}>
+                            {p}
+                         </button>
                       ))}
-                    </div>
+                   </div>
                 </div>
-                <div className="relative">
-                    <input 
-                      type="number" 
-                      inputMode="decimal"
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      placeholder="0"
-                      className="w-full text-3xl font-serif font-bold text-mag-black bg-gray-50 rounded-lg px-3 py-3 border border-transparent focus:bg-white focus:border-mag-black transition-all outline-none placeholder-gray-300"
-                      required
-                      autoFocus
-                    />
-                    <span className="absolute right-3 bottom-4 text-sm font-bold text-gray-400 pointer-events-none">
-                      {currency}
-                    </span>
+
+                {/* Note */}
+                <div>
+                   <label className="block text-sm font-bold text-gray-400 mb-1">備註</label>
+                   <input 
+                      type="text" placeholder="補充說明..."
+                      value={note} onChange={e => setNote(e.target.value)}
+                      className="w-full bg-gray-50 p-3 rounded-lg text-sm font-medium outline-none focus:ring-2 ring-mag-gold/20"
+                   />
                 </div>
-              </div>
 
-              {/* Item */}
-              <div>
-                <label className="block text-xs font-bold text-mag-gray uppercase tracking-wider mb-2">項目名稱</label>
-                <input 
-                  type="text" 
-                  value={item}
-                  onChange={(e) => setItem(e.target.value)}
-                  placeholder="例如：午餐、車票..."
-                  className="w-full text-lg font-medium text-mag-black bg-gray-50 rounded-lg px-3 py-3 border border-transparent focus:bg-white focus:border-mag-black transition-all outline-none placeholder-gray-300"
-                  required
-                />
-              </div>
-
-              {/* Payer */}
-              <div>
-                <label className="block text-xs font-bold text-mag-gray uppercase tracking-wider mb-2">付款者</label>
-                <div className="flex bg-gray-100 rounded-lg p-1">
-                  {(['想想', '錢錢'] as const).map((p) => (
-                    <button
-                      key={p}
-                      type="button"
-                      onClick={() => setPayer(p)}
-                      className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${
-                        payer === p 
-                          ? 'bg-white text-mag-black shadow-sm' 
-                          : 'text-gray-400 hover:text-gray-600'
-                      }`}
+                <div className="pt-2">
+                    <button 
+                       type="submit" disabled={isSubmitting}
+                       className="w-full bg-mag-gold text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-[#b08d48] transition-transform active:scale-95 disabled:opacity-50 disabled:active:scale-100 text-lg"
                     >
-                      {p}
+                       {isSubmitting ? '處理中...' : '確認儲存'}
                     </button>
-                  ))}
                 </div>
-              </div>
-
-              {/* Note */}
-              <div>
-                <label className="block text-xs font-bold text-mag-gray uppercase tracking-wider mb-2">備註 (選填)</label>
-                <input 
-                  type="text"
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  className="w-full text-base font-medium text-mag-black bg-gray-50 rounded-lg px-3 py-3 border border-transparent focus:bg-white focus:border-mag-black transition-all outline-none placeholder-gray-300"
-                />
-              </div>
-
-              <button 
-                type="submit"
-                disabled={isSubmitting}
-                className={`w-full py-4 font-bold rounded-lg shadow-lg flex items-center justify-center gap-2 transition-all ${
-                  isSubmitting 
-                    ? 'bg-gray-400 cursor-not-allowed' 
-                    : 'bg-mag-gold text-white hover:bg-[#b08d48] active:scale-[0.98]'
-                }`}
-              >
-                {isSubmitting ? (
-                  <><SpinnerIcon className="w-5 h-5" /> 處理中...</>
-                ) : (
-                  '確認新增'
-                )}
-              </button>
-              
-              {submitStatus === 'success' && (
-                 <div className="text-center text-green-600 text-sm font-bold">✓ 新增成功</div>
-              )}
-            </form>
+             </form>
           </div>
+        </div>
+      )}
+
+      {/* CUSTOM CONFIRM DELETE MODAL (Replaces window.confirm) */}
+      {deleteConfirmId !== null && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isDeleting && setDeleteConfirmId(null)} />
+           <div className="bg-white w-full max-w-xs rounded-2xl shadow-2xl z-10 p-6 animate-in zoom-in-95 duration-200 text-center">
+              <div className="w-12 h-12 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                 <TrashIcon className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-bold text-mag-black mb-2">確定要刪除嗎？</h3>
+              <p className="text-sm text-gray-500 mb-6">刪除後將無法復原此筆消費紀錄。</p>
+              
+              <div className="flex gap-3">
+                 <button 
+                   onClick={() => setDeleteConfirmId(null)}
+                   disabled={isDeleting}
+                   className="flex-1 py-3 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 active:scale-95 disabled:opacity-50"
+                 >
+                   取消
+                 </button>
+                 <button 
+                   onClick={handleConfirmDelete}
+                   disabled={isDeleting}
+                   className="flex-1 py-3 bg-red-500 text-white font-bold rounded-xl hover:bg-red-600 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                 >
+                   {isDeleting ? '刪除中...' : '確認刪除'}
+                 </button>
+              </div>
+           </div>
         </div>
       )}
 

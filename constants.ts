@@ -2,10 +2,10 @@
 
 import { DaySchedule, ChecklistItem, LocationDetail, UsefulLink, EmergencyContact } from './types';
 
-// 請填入您部署 Google Apps Script 後取得的 Web App URL
-export const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwvCzMrZeA1Ky-R0PKGeH65O0BBVqq7pdFOYZnmkKpUMlGX6ysXKsi34CBEj1Ze5N3F-g/exec"; 
-
-export const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1GxlqNNOFl6M7GkjXaAmaFiLY90Ia_irHyerJ6_v0258/edit?gid=1261285869#gid=1261285869";
+// Google Apps Script URL for Expenses
+export const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw2kYPq34YjCxjg9cBIuXyAYbgQXybUoXVqdjjY4eDKLKezLicJwQHUYJbNxn-liqRiRA/exec';
+// Optional: Google Sheet URL for direct access (Placeholder)
+export const GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1GxlqNNOFl6M7GkjXaAmaFiLY90Ia_irHyerJ6_v0258/edit?gid=1261285869#gid=1261285869';
 
 export const PRE_TRIP_NOTES = [
   "機場很冷要帶外套",
@@ -112,7 +112,10 @@ export const LOCATION_DETAILS: Record<string, LocationDetail> = {
 　　車種：禁煙車 フィット同等クラス（SS）
 　　禁煙／喫煙の希望：禁煙車を希望する
 
-　　出発店舗：河口湖駅前営業所`,
+　　出発店舗：河口湖駅前営業所
+　　出発店舗住所：山梨県南都留郡富士河口湖町船津3647-1
+　　ご連絡先：050-1712-2693
+　　店舗情報：https://www.tabirai.net/car/yamanashi/company/nippon/branch/?PID=4573`,
     address: '山梨県南都留郡富士河口湖町船津3647-1',
     carNaviPhone: '050-1712-2693',
     websiteUrl: 'https://www.tabirai.net/car/yamanashi/company/nippon/branch/?PID=4573'

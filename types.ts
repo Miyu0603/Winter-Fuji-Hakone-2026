@@ -3,8 +3,8 @@ export interface LocationDetail {
   id: string;
   title: string;
   description: string;
-  address?: string; // Placeholder for future
-  openingHours?: string; // Placeholder for future
+  address?: string;
+  openingHours?: string;
   mapUrl?: string;
   websiteUrl?: string;
   carNaviPhone?: string; // For Japanese Car GPS
@@ -34,15 +34,6 @@ export interface ChecklistItem {
   category?: string;
 }
 
-export interface ExpenseRecord {
-  date: string;
-  item: string;
-  payer: string;
-  twd: number;
-  jpy: number;
-  note: string;
-}
-
 export interface UsefulLink {
   title: string;
   url: string;
@@ -60,11 +51,21 @@ export interface ShoppingItem {
   isCompleted: boolean;
 }
 
+export interface ExpenseRecord {
+  rowIndex: number; // Important for Edit/Delete
+  date: string;
+  item: string;
+  payer: string;
+  amountTwd: number;
+  amountJpy: number;
+  note: string;
+}
+
 export enum Tab {
   ITINERARY = 'Itinerary',
   PREP = 'Prep',
   PACKING = 'Packing',
-  COST = 'Cost',
   INFO = 'Info',
-  SHOPPING = 'Shopping'
+  SHOPPING = 'Shopping',
+  COST = 'Cost'
 }
