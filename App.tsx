@@ -100,9 +100,8 @@ const App: React.FC = () => {
       const response = await fetch(`${GOOGLE_SCRIPT_URL}?t=${new Date().getTime()}`);
       
       const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error("API未回傳JSON，請檢查GAS部署權限是否為「任何人」");
-      }
+      // Remove strict content-type check or make it optional as some proxies might strip it
+      // if (!contentType || !contentType.includes("application/json")) { ... }
 
       const json = await response.json();
       if (json.status === 'error') throw new Error(json.message);
@@ -140,7 +139,11 @@ const App: React.FC = () => {
 
     } catch (err: any) {
       console.error(err);
-      setExpensesError(err.message || "讀取失敗，請檢查網路或 GAS 設定");
+      if (err.message === 'Failed to fetch') {
+        setExpensesError("無法連線到 Google Sheet。\n1. 請檢查您的網路連線。\n2. 若有安裝 AdBlock 請先關閉。\n3. 請確認 GAS 部署權限是否為「任何人」。");
+      } else {
+        setExpensesError(err.message || "讀取失敗，請檢查網路或 GAS 設定");
+      }
     } finally {
       setIsExpensesLoading(false);
     }
@@ -204,8 +207,14 @@ const App: React.FC = () => {
                 </h1>
              </div>
 
-             {/* RIGHT: Weather (Icon on right, text on left) */}
-             <div className="flex items-end gap-3">
+             {/* RIGHT: Weather (Clickable Link) */}
+             <a 
+               href="https://www.google.com/search?q=Tokyo+weather" 
+               target="_blank" 
+               rel="noopener noreferrer"
+               className="flex items-end gap-3 cursor-pointer hover:opacity-70 transition-opacity"
+               title="查看詳細天氣"
+             >
                  <div className="flex flex-col items-end mb-1">
                      {weather && (
                        <>
@@ -217,7 +226,7 @@ const App: React.FC = () => {
                  <div className="leading-none shrink-0">
                     {weather && getWeatherIcon(weather.code)}
                  </div>
-             </div>
+             </a>
           </div>
 
           <div className="flex gap-6 border-b border-transparent overflow-x-auto no-scrollbar">
