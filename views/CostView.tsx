@@ -1,5 +1,4 @@
 
-
 import React, { useState } from 'react';
 import { GOOGLE_SCRIPT_URL, GOOGLE_SHEET_URL } from '../constants';
 import { SheetIcon, PlusIcon, RefreshIcon, EditIcon, TrashIcon } from '../components/Icons';
@@ -24,15 +23,13 @@ export const CostView: React.FC<CostViewProps> = ({
   const [showModal, setShowModal] = useState(false);
   const [mode, setMode] = useState<'add' | 'edit'>('add');
   
-  // Custom Confirmation Modal State (Replaces window.confirm)
+  // Custom Confirmation Modal State
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
-  
-  // Error Message State (Replaces alert)
   const [actionError, setActionError] = useState<string | null>(null);
 
   // Form Data
   const [editingRowIndex, setEditingRowIndex] = useState<number | null>(null);
-  const [date, setDate] = useState(''); // New State for Date
+  const [date, setDate] = useState('');
   const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState<'JPY' | 'TWD'>('JPY');
   const [item, setItem] = useState('');
@@ -41,7 +38,7 @@ export const CostView: React.FC<CostViewProps> = ({
 
   // Processing States
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false); // Global deleting state
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // --- CALCULATIONS ---
   const totalTWD = expenses.reduce((sum, r) => sum + r.amountTwd, 0);
@@ -49,12 +46,10 @@ export const CostView: React.FC<CostViewProps> = ({
 
   // --- FORMATTERS ---
   const formatMoney = (val: number, curr: 'JPY' | 'TWD') => {
-    // Only show $ symbol, remove NT and Yen symbols for cleaner look per request
     return curr === 'JPY' ? `¥${Math.round(val).toLocaleString()}` : `$${Math.round(val).toLocaleString()}`;
   };
 
   const formatDate = (dateStr: string) => {
-    // Attempt to parse standard date strings
     const date = new Date(dateStr);
     if (!isNaN(date.getTime())) {
       const y = date.getFullYear();
@@ -62,18 +57,16 @@ export const CostView: React.FC<CostViewProps> = ({
       const d = String(date.getDate()).padStart(2, '0');
       return `${y}/${m}/${d}`;
     }
-    // Fallback regex match if string format is weird
     const match = dateStr.match(/(\d{4}\/\d{1,2}\/\d{1,2})|(\d{1,2}\/\d{1,2})/);
     return match ? match[0] : dateStr;
   };
 
   // --- HANDLERS ---
-
   const handleOpenAdd = () => {
     setActionError(null);
     setMode('add');
     setEditingRowIndex(null);
-    // Default date to today
+    
     const today = new Date();
     const y = today.getFullYear();
     const m = String(today.getMonth() + 1).padStart(2, '0');
@@ -90,7 +83,6 @@ export const CostView: React.FC<CostViewProps> = ({
     setMode('edit');
     setEditingRowIndex(record.rowIndex);
     
-    // Parse record date for input (YYYY-MM-DD)
     const dateObj = new Date(record.date);
     if (!isNaN(dateObj.getTime())) {
        const y = dateObj.getFullYear();
@@ -98,7 +90,6 @@ export const CostView: React.FC<CostViewProps> = ({
        const d = String(dateObj.getDate()).padStart(2, '0');
        setDate(`${y}-${m}-${d}`);
     } else {
-       // Fallback: try to guess or just set today
        setDate(''); 
     }
 
@@ -117,7 +108,6 @@ export const CostView: React.FC<CostViewProps> = ({
     setShowModal(true);
   };
 
-  // Step 1: Request Delete (Opens Custom Modal)
   const handleRequestDelete = (e: React.MouseEvent, rowIndex: number) => {
     e.stopPropagation();
     e.preventDefault();
@@ -132,29 +122,22 @@ export const CostView: React.FC<CostViewProps> = ({
     setDeleteConfirmId(numericRowIndex);
   };
 
-  // Step 2: Confirm Delete (Executes API)
   const handleConfirmDelete = async () => {
     if (deleteConfirmId === null) return;
-    
     setIsDeleting(true);
     setActionError(null);
 
     try {
-      const payload = { 
-        action: 'delete', 
-        rowIndex: deleteConfirmId 
-      };
-      
+      const payload = { action: 'delete', rowIndex: deleteConfirmId };
       const response = await fetch(GOOGLE_SCRIPT_URL, {
         method: 'POST',
         headers: { "Content-Type": "text/plain;charset=utf-8" }, 
         body: JSON.stringify(payload),
       });
-      
       const result = await response.json();
       
       if (result.result === "success") {
-        setDeleteConfirmId(null); // Close modal
+        setDeleteConfirmId(null);
         onAddSuccess(); 
       } else {
         setActionError("刪除失敗：" + (result.error || "未知錯誤"));
@@ -175,7 +158,6 @@ export const CostView: React.FC<CostViewProps> = ({
     setIsSubmitting(true);
 
     try {
-      // Format date for display/storage (YYYY/MM/DD)
       const dateObj = new Date(date);
       const formattedDate = !isNaN(dateObj.getTime()) 
           ? `${dateObj.getFullYear()}/${String(dateObj.getMonth() + 1).padStart(2, '0')}/${String(dateObj.getDate()).padStart(2, '0')}`
@@ -184,7 +166,7 @@ export const CostView: React.FC<CostViewProps> = ({
       const payload = {
         action: mode,
         rowIndex: editingRowIndex,
-        date: formattedDate, // Add Date to payload
+        date: formattedDate,
         item: item.trim(),
         payer: payer,
         amountTwd: currency === 'TWD' ? Number(amount) : 0,
@@ -208,8 +190,6 @@ export const CostView: React.FC<CostViewProps> = ({
       setIsSubmitting(false);
     }
   };
-
-  // --- RENDER ---
 
   return (
     <div className="pb-32 pt-6 px-5 max-w-lg mx-auto animate-in fade-in slide-in-from-bottom-2 duration-500">
@@ -242,7 +222,7 @@ export const CostView: React.FC<CostViewProps> = ({
         </div>
       </div>
 
-      {/* ERROR MESSAGE (Replaces Alert) */}
+      {/* ERROR MESSAGE */}
       {(fetchError || actionError) && (
         <div className="bg-red-50 border border-red-100 text-red-600 p-4 rounded-xl text-center text-sm font-bold mb-6 whitespace-pre-line leading-relaxed shadow-sm animate-in fade-in slide-in-from-top-2">
           {fetchError || actionError}
@@ -256,63 +236,63 @@ export const CostView: React.FC<CostViewProps> = ({
         ) : (
           expenses.map((record) => {
             const isValidRow = record.rowIndex && record.rowIndex > 0;
-            const isTargetDeleting = deleteConfirmId === record.rowIndex;
-
             return (
-              <div key={record.rowIndex || Math.random()} className={`relative group bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all ${isDeleting ? 'opacity-50 pointer-events-none' : ''}`}>
+              <div key={record.rowIndex || Math.random()} className={`bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all ${isDeleting && deleteConfirmId === record.rowIndex ? 'opacity-50' : ''}`}>
                 
-                {/* BUTTONS: Outer Layer (Edit & Delete) */}
-                <div className="absolute top-3 right-3 z-50 flex gap-1">
-                   {/* Edit Button */}
-                   <button 
-                     type="button"
-                     onClick={(e) => handleOpenEdit(e, record)}
-                     className="p-2 bg-gray-50 text-gray-400 hover:text-mag-gold hover:bg-mag-gold/10 rounded-lg transition-colors cursor-pointer active:scale-95"
-                     title="編輯"
-                   >
-                     <EditIcon className="w-4 h-4" />
-                   </button>
+                {/* TOP ROW: Metadata & Actions */}
+                <div className="flex justify-between items-start gap-2 mb-2">
+                   {/* Info Tags */}
+                   <div className="flex flex-col gap-1 min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                         <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">
+                           {formatDate(record.date)}
+                         </span>
+                         <span className={`text-[10px] font-bold border px-1.5 py-0.5 rounded ${
+                           record.payer === '想想' ? 'border-pink-200 text-pink-500 bg-pink-50' : 'border-blue-200 text-blue-600 bg-blue-50'
+                         }`}>
+                           {record.payer}
+                         </span>
+                      </div>
+                      
+                      {record.note && (
+                         <p className="text-xs text-gray-400 bg-gray-50 px-2 py-0.5 rounded inline-block truncate max-w-full w-fit">
+                           {record.note}
+                         </p>
+                      )}
+                   </div>
 
-                   {/* Delete Button */}
-                   <button 
-                     type="button"
-                     onClick={(e) => handleRequestDelete(e, record.rowIndex)}
-                     className={`p-2 rounded-lg transition-colors cursor-pointer active:scale-95 ${isValidRow ? 'bg-gray-50 text-gray-400 hover:text-red-500 hover:bg-red-50' : 'bg-red-50 text-red-500'}`}
-                     title={isValidRow ? "刪除" : "資料異常 (無法刪除)"}
-                   >
-                     {!isValidRow ? (
-                       <span className="text-xs font-bold">⚠️</span> 
-                     ) : (
-                       <TrashIcon className="w-4 h-4" />
-                     )}
-                   </button>
+                   {/* Actions Buttons */}
+                   <div className="flex gap-1 shrink-0">
+                      <button 
+                        type="button"
+                        onClick={(e) => handleOpenEdit(e, record)}
+                        className="p-1.5 bg-gray-50 text-gray-400 hover:text-mag-gold hover:bg-mag-gold/10 rounded-lg transition-colors cursor-pointer active:scale-95"
+                        title="編輯"
+                      >
+                        <EditIcon className="w-4 h-4" />
+                      </button>
+
+                      <button 
+                        type="button"
+                        onClick={(e) => handleRequestDelete(e, record.rowIndex)}
+                        className={`p-1.5 rounded-lg transition-colors cursor-pointer active:scale-95 ${isValidRow ? 'bg-gray-50 text-gray-400 hover:text-red-500 hover:bg-red-50' : 'bg-red-50 text-red-500'}`}
+                        title={isValidRow ? "刪除" : "資料異常"}
+                      >
+                        {!isValidRow ? <span className="text-xs font-bold">⚠️</span> : <TrashIcon className="w-4 h-4" />}
+                      </button>
+                   </div>
                 </div>
 
-                {/* CONTENT */}
-                <div className="pr-20"> 
-                   <div className="flex items-center gap-2 mb-2">
-                      <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">
-                        {formatDate(record.date)}
-                      </span>
-                      <span className={`text-[10px] font-bold border px-1.5 py-0.5 rounded ${
-                        record.payer === '想想' ? 'border-pink-200 text-pink-500 bg-pink-50' : 'border-blue-200 text-blue-600 bg-blue-50'
-                      }`}>
-                        {record.payer}
-                      </span>
-                   </div>
+                {/* BOTTOM ROW: Item Name & Amount */}
+                <div className="flex justify-between items-center gap-4">
+                   <h4 className="text-lg font-bold text-mag-black leading-tight break-words flex-1">
+                     {record.item}
+                   </h4>
                    
-                   <h4 className="text-base font-bold text-mag-black mb-1">{record.item}</h4>
-                   
-                   <div className="font-mono font-light text-lg text-mag-black">
-                     {record.amountJpy > 0 && formatMoney(record.amountJpy, 'JPY')}
-                     {record.amountTwd > 0 && formatMoney(record.amountTwd, 'TWD')}
+                   <div className="text-lg font-bold font-mono text-mag-black text-right shrink-0">
+                      {record.amountJpy > 0 && <div>{formatMoney(record.amountJpy, 'JPY')}</div>}
+                      {record.amountTwd > 0 && <div>{formatMoney(record.amountTwd, 'TWD')}</div>}
                    </div>
-
-                   {record.note && (
-                      <p className="mt-2 text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded inline-block">
-                        {record.note}
-                      </p>
-                   )}
                 </div>
 
               </div>
@@ -332,13 +312,12 @@ export const CostView: React.FC<CostViewProps> = ({
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowModal(false)} />
           <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl z-10 p-6 animate-in zoom-in-95 duration-200">
-             <div className="flex justify-between mb-6">
+             <div className="flex justify-between mb-4">
                 <h3 className="text-xl font-serif font-bold">{mode === 'edit' ? '編輯項目' : '新增項目'}</h3>
                 <button type="button" onClick={() => setShowModal(false)}><span className="text-2xl text-gray-400">×</span></button>
              </div>
              
              <form onSubmit={handleSubmit} className="space-y-3">
-                {/* Date Input */}
                 <div>
                    <label className="block text-sm font-bold text-gray-400 mb-1">日期</label>
                    <input 
@@ -348,7 +327,6 @@ export const CostView: React.FC<CostViewProps> = ({
                    />
                 </div>
 
-                {/* Amount */}
                 <div>
                    <label className="block text-sm font-bold text-gray-400 mb-1">金額</label>
                    <div className="relative">
@@ -368,7 +346,6 @@ export const CostView: React.FC<CostViewProps> = ({
                    </div>
                 </div>
 
-                {/* Item */}
                 <div>
                    <label className="block text-sm font-bold text-gray-400 mb-1">項目名稱</label>
                    <input 
@@ -378,7 +355,6 @@ export const CostView: React.FC<CostViewProps> = ({
                    />
                 </div>
 
-                {/* Payer */}
                 <div>
                    <label className="block text-sm font-bold text-gray-400 mb-1">付款者</label>
                    <div className="flex gap-2">
@@ -391,7 +367,6 @@ export const CostView: React.FC<CostViewProps> = ({
                    </div>
                 </div>
 
-                {/* Note */}
                 <div>
                    <label className="block text-sm font-bold text-gray-400 mb-1">備註</label>
                    <input 
@@ -404,7 +379,7 @@ export const CostView: React.FC<CostViewProps> = ({
                 <div className="pt-2">
                     <button 
                        type="submit" disabled={isSubmitting}
-                       className="w-full bg-mag-gold text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-[#b08d48] transition-transform active:scale-95 disabled:opacity-50 disabled:active:scale-100 text-lg"
+                       className="w-full bg-mag-gold text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-[#b08d48] transition-transform active:scale-95 disabled:opacity-50 text-lg"
                     >
                        {isSubmitting ? '處理中...' : '確認儲存'}
                     </button>
@@ -414,7 +389,7 @@ export const CostView: React.FC<CostViewProps> = ({
         </div>
       )}
 
-      {/* CUSTOM CONFIRM DELETE MODAL (Replaces window.confirm) */}
+      {/* DELETE CONFIRM MODAL */}
       {deleteConfirmId !== null && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isDeleting && setDeleteConfirmId(null)} />
@@ -444,7 +419,6 @@ export const CostView: React.FC<CostViewProps> = ({
            </div>
         </div>
       )}
-
     </div>
   );
 };
