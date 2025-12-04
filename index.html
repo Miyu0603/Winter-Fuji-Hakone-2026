@@ -3,12 +3,22 @@
 <html lang="zh-TW">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#F9F9F7" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="冬富士之旅">
+
     <title>Winter Fuji & Hakone 2026</title>
     
-    <!-- Mount Fuji Icon -->
+    <!-- Favicon (Browser Tab) - Keep SVG -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='100' fill='%23F9F9F7'/%3E%3Cpath d='M64 416h384L308 140c-15-28-56-28-71 0L64 416z' fill='%235D7C8F'/%3E%3Cpath d='M256 128l68 120-38 24-30-40-30 40-38-24 68-120z' fill='%23FFFFFF'/%3E%3C/svg%3E" />
-    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='100' fill='%23F9F9F7'/%3E%3Cpath d='M64 416h384L308 140c-15-28-56-28-71 0L64 416z' fill='%235D7C8F'/%3E%3Cpath d='M256 128l68 120-38 24-30-40-30 40-38-24 68-120z' fill='%23FFFFFF'/%3E%3C/svg%3E" />
+    
+    <!-- Apple Touch Icon (iOS Home Screen) - Must be PNG -->
+    <link rel="apple-touch-icon" href="https://img.icons8.com/fluency/512/fuji-mount.png" />
+
+    <!-- Android Manifest -->
+    <link rel="manifest" href="/manifest.json" />
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -31,6 +41,10 @@
             boxShadow: {
               'soft': '0 4px 20px rgba(0, 0, 0, 0.03)',
               'float': '0 10px 30px rgba(0, 0, 0, 0.08)',
+            },
+            padding: {
+              'safe-top': 'env(safe-area-inset-top)',
+              'safe-bottom': 'env(safe-area-inset-bottom)',
             }
           }
         }
@@ -45,6 +59,9 @@
       .no-scrollbar {
           -ms-overflow-style: none;  /* IE and Edge */
           scrollbar-width: none;  /* Firefox */
+      }
+      body {
+        -webkit-tap-highlight-color: transparent;
       }
     </style>
   <script type="importmap">
