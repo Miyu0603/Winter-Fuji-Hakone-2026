@@ -53,7 +53,7 @@ export const ShoppingView: React.FC<ShoppingViewProps> = ({ items, setItems }) =
   };
 
   return (
-    <div className="pb-32 pt-6 px-5 max-w-lg mx-auto animate-in fade-in slide-in-from-bottom-2 duration-500">
+    <div className="pb-32 pt-5 px-5 max-w-lg mx-auto animate-in fade-in slide-in-from-bottom-2 duration-500">
       
       {/* Header */}
       <div className="mb-6 flex justify-between items-end">

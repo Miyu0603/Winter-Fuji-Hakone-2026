@@ -5,7 +5,7 @@ import { ExternalLinkIcon } from '../components/Icons';
 
 export const InfoView: React.FC = () => {
   return (
-    <div className="pb-32 pt-6 px-5 max-w-lg mx-auto animate-in fade-in slide-in-from-bottom-2 duration-500">
+    <div className="pb-32 pt-5 px-5 max-w-lg mx-auto animate-in fade-in slide-in-from-bottom-2 duration-500">
       
       {/* Useful Links Section */}
       <div className="mb-4">

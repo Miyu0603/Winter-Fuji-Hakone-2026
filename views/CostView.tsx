@@ -194,7 +194,7 @@ export const CostView: React.FC<CostViewProps> = ({
   };
 
   return (
-    <div className="pb-32 pt-6 px-5 max-w-lg mx-auto animate-in fade-in slide-in-from-bottom-2 duration-500">
+    <div className="pb-32 pt-5 px-5 max-w-lg mx-auto animate-in fade-in slide-in-from-bottom-2 duration-500">
       
       {/* HEADER */}
       <div className="flex justify-between items-end mb-6">
@@ -232,7 +232,7 @@ export const CostView: React.FC<CostViewProps> = ({
       )}
 
       {/* LIST */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         {expenses.length === 0 && !isLoading ? (
           <div className="text-center py-10 text-gray-400 border border-dashed rounded-xl">尚無紀錄</div>
         ) : (
@@ -242,7 +242,7 @@ export const CostView: React.FC<CostViewProps> = ({
               <div key={record.rowIndex || Math.random()} className={`bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all ${isDeleting && deleteConfirmId === record.rowIndex ? 'opacity-50' : ''}`}>
                 
                 {/* TOP ROW: Metadata (Date, Payer, Note) & Actions */}
-                <div className="flex justify-between items-start gap-2 mb-3 pb-3 border-b border-gray-50">
+                <div className="flex justify-between items-start gap-2 mb-1">
                    {/* Info Tags */}
                    <div className="flex flex-wrap items-center gap-2 flex-1">
                       <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">
@@ -284,11 +284,11 @@ export const CostView: React.FC<CostViewProps> = ({
 
                 {/* BOTTOM ROW: Item Name & Amount */}
                 <div className="flex justify-between items-center gap-4">
-                   <h4 className="text-lg font-bold text-mag-black leading-tight break-words flex-1">
+                   <h4 className="text-base font-bold text-mag-black leading-tight break-words flex-1">
                      {record.item}
                    </h4>
                    
-                   <div className="text-lg font-bold font-mono text-mag-black text-right shrink-0">
+                   <div className="text-base font-bold font-mono text-mag-black text-right shrink-0">
                       {record.amountJpy > 0 && <div>{formatMoney(record.amountJpy, 'JPY')}</div>}
                       {record.amountTwd > 0 && <div>{formatMoney(record.amountTwd, 'TWD')}</div>}
                    </div>

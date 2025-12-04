@@ -200,7 +200,7 @@ const App: React.FC = () => {
           <div className="flex justify-between items-center mb-4">
              {/* LEFT: Title */}
              <div className="text-left">
-                <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-mag-gold mb-1">Travel Plan</p>
+                <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-mag-gold mb-1">TRAVEL PLAN</p>
                 <h1 className="font-serif text-mag-black">
                   <span className="block text-3xl font-black tracking-tight">冬富士之旅</span>
                   <span className="block text-sm font-bold text-gray-500 mt-1">2回目の日本旅</span>

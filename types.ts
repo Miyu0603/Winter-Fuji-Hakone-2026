@@ -1,4 +1,5 @@
 
+
 export interface LocationDetail {
   id: string;
   title: string;
@@ -10,6 +11,15 @@ export interface LocationDetail {
   carNaviPhone?: string; // For Japanese Car GPS
   imageUrl?: string; // New: Image to display in detail view
   transitLegs?: TransitLeg[]; // New: Structured transit info
+  reservation?: {
+    id: string;
+    sections: ReservationSection[];
+  };
+}
+
+export interface ReservationSection {
+  title: string;
+  items: { label: string; value: string; isFullWidth?: boolean }[];
 }
 
 export interface TransitLeg {

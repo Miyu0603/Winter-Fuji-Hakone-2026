@@ -10,9 +10,11 @@
 
 
 
+
+
 import React, { useEffect, useState } from 'react';
 import { LocationDetail } from '../types';
-import { MapIcon, CarIcon, CopyIcon, CheckCircleIcon, BusIcon, WalkIcon } from '../components/Icons';
+import { MapIcon, CarIcon, CopyIcon, CheckCircleIcon, BusIcon, WalkIcon, TicketIcon } from '../components/Icons';
 
 interface DetailViewProps {
   location: LocationDetail;
@@ -30,9 +32,9 @@ export const DetailView: React.FC<DetailViewProps> = ({ location, onBack }) => {
     };
   }, []);
 
-  const handleCopy = () => {
-    if (location.carNaviPhone) {
-      navigator.clipboard.writeText(location.carNaviPhone);
+  const handleCopy = (text?: string) => {
+    if (text) {
+      navigator.clipboard.writeText(text);
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
     }
@@ -89,12 +91,59 @@ export const DetailView: React.FC<DetailViewProps> = ({ location, onBack }) => {
               </div>
             )}
 
-            {/* Description */}
-            <div className="prose prose-sm prose-gray mb-6">
-               <p className="text-mag-black leading-relaxed text-base font-medium whitespace-pre-line">
-                 {location.description}
-               </p>
-            </div>
+            {/* Structured Reservation Info */}
+            {location.reservation && (
+              <div className="mb-8">
+                {/* Booking ID Card */}
+                <div className="bg-mag-black text-white p-5 rounded-2xl shadow-lg mb-6 relative overflow-hidden group">
+                   <div className="absolute top-0 right-0 p-4 opacity-10 rotate-12 transform scale-150">
+                     <TicketIcon className="w-24 h-24" />
+                   </div>
+                   <div className="relative z-10">
+                      <div className="text-[10px] font-bold uppercase tracking-widest text-mag-gold mb-2">Booking ID</div>
+                      <div 
+                        className="text-2xl font-mono font-bold tracking-wider cursor-pointer flex items-center gap-2"
+                        onClick={() => handleCopy(location.reservation?.id)}
+                        title="點擊複製"
+                      >
+                         {location.reservation.id}
+                         <CopyIcon className="w-5 h-5 text-gray-400 group-hover:text-white transition-colors" />
+                      </div>
+                      {isCopied && <div className="absolute bottom-4 right-4 text-xs font-bold text-green-400 bg-green-900/30 px-2 py-1 rounded">已複製</div>}
+                   </div>
+                </div>
+
+                {/* Reservation Sections */}
+                <div className="space-y-6">
+                  {location.reservation.sections.map((section, idx) => (
+                    <div key={idx} className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+                      <h3 className="text-xs font-bold text-mag-gray uppercase tracking-widest mb-4 border-b border-gray-100 pb-2">
+                        {section.title}
+                      </h3>
+                      <div className="grid grid-cols-1 gap-y-4">
+                        {section.items.map((item, i) => (
+                          <div key={i} className={`flex flex-col ${item.isFullWidth ? 'col-span-1' : ''}`}>
+                             <span className="text-[10px] font-bold text-gray-400 mb-0.5">{item.label}</span>
+                             <span className="text-base font-bold text-mag-black whitespace-pre-line leading-snug">
+                               {item.value}
+                             </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Description (Legacy or Supplementary) */}
+            {location.description && (
+              <div className="prose prose-sm prose-gray mb-6">
+                 <p className="text-mag-black leading-relaxed text-base font-medium whitespace-pre-line">
+                   {location.description}
+                 </p>
+              </div>
+            )}
 
             {/* Structured Transit Info - Simplified View */}
             {location.transitLegs && location.transitLegs.length > 0 && (
@@ -168,7 +217,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ location, onBack }) => {
                           </div>
                       </div>
                       <button 
-                          onClick={handleCopy}
+                          onClick={() => handleCopy(location.carNaviPhone)}
                           className="p-2 rounded-full hover:bg-gray-200 transition-colors"
                           title="複製"
                       >

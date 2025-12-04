@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { PACKING_CARRY_ON, PACKING_CHECKED } from '../constants';
 import { Checkbox } from '../components/Checkbox';
@@ -12,7 +13,7 @@ export const PackingView: React.FC<PackingViewProps> = ({ checkedItems, toggleIt
   const activeList = activeSegment === 'carry-on' ? PACKING_CARRY_ON : PACKING_CHECKED;
 
   return (
-    <div className="pb-32 pt-6 px-5 max-w-lg mx-auto animate-in fade-in slide-in-from-bottom-2 duration-500">
+    <div className="pb-32 pt-5 px-5 max-w-lg mx-auto animate-in fade-in slide-in-from-bottom-2 duration-500">
       
       {/* Minimal Tab Switcher */}
       <div className="flex mb-8 bg-gray-200/50 p-1 rounded-lg">
@@ -42,7 +43,7 @@ export const PackingView: React.FC<PackingViewProps> = ({ checkedItems, toggleIt
       {activeSegment === 'carry-on' && (
         <div className="mb-6 bg-mag-red/5 border-l-4 border-mag-red px-4 py-3 rounded-r-lg flex items-center justify-between">
            <div className="flex flex-col">
-             <span className="text-mag-red font-bold text-xs uppercase tracking-wider mb-0.5">Restriction</span>
+             <span className="text-mag-red font-bold text-xs uppercase tracking-wider mb-0.5">LIMIT</span>
              <span className="text-mag-black text-sm font-bold">液體每瓶限 100ml 以下</span>
            </div>
            <span className="text-[10px] font-medium text-mag-gray bg-white px-2 py-1 rounded border border-gray-100">須裝於透明袋</span>
@@ -53,7 +54,7 @@ export const PackingView: React.FC<PackingViewProps> = ({ checkedItems, toggleIt
       {activeSegment === 'checked' && (
         <div className="mb-6 bg-mag-red/5 border-l-4 border-mag-red px-4 py-3 rounded-r-lg flex items-center justify-between">
            <div className="flex flex-col">
-             <span className="text-mag-red font-bold text-xs uppercase tracking-wider mb-0.5">Warning</span>
+             <span className="text-mag-red font-bold text-xs uppercase tracking-wider mb-0.5">NOTE</span>
              <span className="text-mag-black text-sm font-bold">電池請勿托運</span>
            </div>
            <span className="text-[10px] font-medium text-mag-gray bg-white px-2 py-1 rounded border border-gray-100">須隨身攜帶</span>

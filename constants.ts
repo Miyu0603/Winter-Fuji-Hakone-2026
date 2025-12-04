@@ -2,6 +2,9 @@
 
 
 
+
+
+
 import { DaySchedule, ChecklistItem, LocationDetail, UsefulLink, EmergencyContact } from './types';
 
 // Google Apps Script URL for Expenses
@@ -85,6 +88,56 @@ export const LOCATION_DETAILS: Record<string, LocationDetail> = {
     mapUrl: 'https://www.google.com/maps/search/?api=1&query=Hotel+New+Century+Kawaguchiko',
     websiteUrl: 'http://www.hotel-newcentury.com/',
     carNaviPhone: '0555-72-1422'
+  },
+  'super_hotel_gotemba': {
+    id: 'super_hotel_gotemba',
+    title: '御殿場2號超級飯店 (Super Hotel)',
+    description: '位於御殿場市中心的高CP值商務飯店，以提供天然溫泉「御胎内温泉」與健康營養的免費早餐聞名。距離御殿場 Outlet 與車站皆便利。',
+    address: '静岡県御殿場市東田中1029-1',
+    mapUrl: 'https://www.google.com/maps/search/?api=1&query=Super+Hotel+Gotemba+2',
+    websiteUrl: 'https://www.superhotel.co.jp/s_hotels/gotemba2/',
+    carNaviPhone: '0550-84-9000',
+    reservation: {
+      id: '3124-5424-9496',
+      sections: [
+        {
+          title: '預訂人資料',
+          items: [
+            { label: '預訂者', value: 'Shi Yi Chang' },
+            { label: '預訂地址', value: '201003 台灣 2 F., No. 50, Huayuan 3rd St., Xinyi Dist., Keelung City', isFullWidth: true },
+          ]
+        },
+        {
+          title: '住宿者資訊',
+          items: [
+            { label: '代表人', value: 'Shi Yi Chang' },
+            { label: '人數', value: '2人 (1男 1女)' },
+            { label: '電話', value: '+886953735805' },
+            { label: 'Email', value: 'sandy060321@gmail.com' },
+          ]
+        },
+        {
+          title: '預訂資料',
+          items: [
+            { label: '方案', value: '最優惠價格方案', isFullWidth: true },
+            { label: '入住', value: '2026-03-01' },
+            { label: '退房', value: '2026-03-02' },
+            { label: '入住時間', value: '15:00 ～ 24:00' },
+            { label: '退房時間', value: '10:00' },
+            { label: '抵達時間', value: '21:00' },
+            { label: '房型', value: '【禁菸】富士山觀景房', isFullWidth: true },
+            { label: '付款方式', value: '現場支付' },
+          ]
+        },
+        {
+          title: '費用明細',
+          items: [
+            { label: '費用合計', value: '10,440 JPY (含稅)' },
+            { label: '取消政策', value: '2/28前免費；入住當日/未到全額 (100%)', isFullWidth: true },
+          ]
+        }
+      ]
+    }
   },
   'skyliner': {
     id: 'skyliner',
@@ -332,7 +385,7 @@ export const ITINERARY: DaySchedule[] = [
       { time: '15:45', description: '抵達元箱根港，步行至箱根神社', isHighlight: true, locationId: 'hakone_shrine' },
       { time: '17:00', description: '搭乘巴士返回御殿場站' },
       { time: '18:00', description: '領取行李' },
-      { time: '18:30', description: '步行至御殿場2號超級飯店 Check-in' }
+      { time: '18:30', description: '步行至御殿場2號超級飯店 Check-in', locationId: 'super_hotel_gotemba' }
     ]
   },
   {

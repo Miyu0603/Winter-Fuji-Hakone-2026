@@ -101,7 +101,7 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({ onNavigateToDetail
         </div>
       </div>
 
-      <div className="px-5 pt-3 pb-32 animate-in fade-in slide-in-from-bottom-2 duration-500">
+      <div className="px-5 pt-1 pb-32 animate-in fade-in slide-in-from-bottom-2 duration-500">
         {/* Day Header Info - Reduced Spacing */}
         <div className="mb-4 relative">
           <div className="pr-10"> {/* Add padding right to avoid overlap with map icon */}
@@ -150,15 +150,15 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({ onNavigateToDetail
       {/* Fixed Back To Top Floating Action Button */}
       <button 
         onClick={handleScrollToTop}
-        className={`fixed bottom-8 right-6 z-40 p-4 bg-mag-black text-white rounded-full shadow-xl hover:bg-gray-800 transition-all duration-300 active:scale-90 flex items-center justify-center ${
+        className={`fixed bottom-6 right-5 z-40 p-3 bg-mag-black text-white rounded-full shadow-xl hover:bg-gray-800 transition-all duration-300 active:scale-90 flex items-center justify-center ${
           showScrollTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
         }`}
         aria-label="返回頂部"
       >
         <svg 
           xmlns="http://www.w3.org/2000/svg" 
-          width="24" 
-          height="24" 
+          width="20" 
+          height="20" 
           viewBox="0 0 24 24" 
           fill="none" 
           stroke="currentColor" 
